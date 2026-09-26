@@ -164,6 +164,7 @@ class PluginTest extends TestCase {
 			(object) array( 'slug' => $this->call( 'get_slug' ) )
 		);
 
+		$this->assertIsObject( $response );
 		$this->assertSame( '7.1.2', $response->tested );
 	}
 
@@ -189,11 +190,14 @@ class PluginTest extends TestCase {
 			(object) array( 'slug' => $this->call( 'get_slug' ) )
 		);
 
+		$this->assertIsObject( $response );
 		$this->assertSame( '7.1.2', $response->tested );
 		$this->assertSame( '7.1.2', $this->call( 'get_cached_version_info' )->tested );
 
 		// The cache holds what the store sent, so it stays correct as WordPress moves on.
 		$stored = get_option( $this->call( 'get_cache_key' ) );
+		$this->assertIsArray( $stored );
+		$this->assertArrayHasKey( 'value', $stored );
 		$this->assertSame( '7.1', json_decode( $stored['value'] )->tested );
 	}
 
