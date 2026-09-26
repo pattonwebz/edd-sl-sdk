@@ -20,6 +20,14 @@ if ( ! file_exists( $edd_sl_sdk_autoloader ) ) {
 	exit( 1 );
 }
 
+// The stubs declare WordPress functions unconditionally, so the suite cannot run in a process
+// where WordPress is already loaded. The check belongs here rather than in the stub file: inside
+// that file the redeclare fatal fires while it is compiled, before any guard there could run.
+if ( class_exists( 'WP' ) || defined( 'WPINC' ) ) {
+	echo 'The SDK test suite must run without WordPress loaded.' . PHP_EOL;
+	exit( 1 );
+}
+
 require_once $edd_sl_sdk_autoloader;
 require_once __DIR__ . '/Stubs/wordpress.php';
 require_once __DIR__ . '/TestCase.php';
