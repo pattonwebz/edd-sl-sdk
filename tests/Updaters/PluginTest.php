@@ -140,6 +140,15 @@ class PluginTest extends TestCase {
 	}
 
 	/**
+	 * A WordPress major release reports only major and minor, and is compared the same way.
+	 */
+	public function test_tested_version_handles_a_major_wordpress_release() {
+		$this->set_wp_version( '7.2' );
+
+		$this->assertSame( '7.1', $this->call( 'get_tested_version', array( (object) array( 'tested' => '7.1' ) ) ) );
+	}
+
+	/**
 	 * A cached entry written by an earlier version is corrected when it is read.
 	 */
 	public function test_cached_version_info_expands_the_tested_version() {
