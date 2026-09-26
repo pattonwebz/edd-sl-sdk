@@ -113,21 +113,21 @@ class PluginTest extends TestCase {
 
 
 	/**
-	 * A single part version is expanded instead of reading an undefined array key.
+	 * A version with only a major part is left alone instead of reading an undefined array key.
 	 */
-	public function test_tested_version_expands_a_single_part_version() {
+	public function test_tested_version_leaves_a_major_only_version_alone() {
 		$this->set_wp_version( '7.1.2' );
 
-		$this->assertSame( '7.1.2', $this->call( 'get_tested_version', array( (object) array( 'tested' => '7' ) ) ) );
+		$this->assertSame( '7', $this->call( 'get_tested_version', array( (object) array( 'tested' => '7' ) ) ) );
 	}
 
 	/**
 	 * Extra version data on the WordPress version is stripped before comparing.
 	 */
 	public function test_tested_version_handles_a_beta_wordpress_version() {
-		$this->set_wp_version( '7.2-beta1' );
+		$this->set_wp_version( '7.2.3-beta1' );
 
-		$this->assertSame( '7.2', $this->call( 'get_tested_version', array( (object) array( 'tested' => '7' ) ) ) );
+		$this->assertSame( '7.2.3', $this->call( 'get_tested_version', array( (object) array( 'tested' => '7.2' ) ) ) );
 	}
 
 	/**
@@ -159,9 +159,9 @@ class PluginTest extends TestCase {
 	}
 
 	/**
-	 * A response fetched from the store is expanded before it is cached.
+	 * A response fetched from the store is expanded for WordPress and cached as sent.
 	 */
-	public function test_remote_response_is_expanded_before_caching() {
+	public function test_remote_response_is_expanded_without_changing_the_cache() {
 		$this->set_wp_version( '7.1.2' );
 		$this->set_http_response(
 			$this->http_response(
@@ -183,10 +183,23 @@ class PluginTest extends TestCase {
 		$this->assertSame( '7.1.2', $response->tested );
 		$this->assertSame( '7.1.2', $this->call( 'get_cached_version_info' )->tested );
 
-		// Read the stored value directly: the read path expands too, so only the raw
-		// cache proves the response was expanded before it was written.
+		// The cache holds what the store sent, so it stays correct as WordPress moves on.
 		$stored = get_option( $this->call( 'get_cache_key' ) );
-		$this->assertSame( '7.1.2', json_decode( $stored['value'] )->tested );
+		$this->assertSame( '7.1', json_decode( $stored['value'] )->tested );
+	}
+
+	/**
+	 * A cache written before a WordPress upgrade still expands for the new version.
+	 */
+	public function test_cached_version_info_expands_after_a_wordpress_upgrade() {
+		$this->set_wp_version( '7.1.2' );
+		$this->call( 'set_version_info_cache', array( $this->version_info( '7.1' ) ) );
+
+		$this->assertSame( '7.1.2', $this->call( 'get_cached_version_info' )->tested );
+
+		$this->set_wp_version( '7.1.3' );
+
+		$this->assertSame( '7.1.3', $this->call( 'get_cached_version_info' )->tested );
 	}
 
 	/**
@@ -216,12 +229,12 @@ class PluginTest extends TestCase {
 	}
 
 	/**
-	 * Extra version data on the tested version is stripped before comparing.
+	 * A tested version carrying pre-release data is left alone.
 	 */
-	public function test_tested_version_ignores_extra_version_data() {
+	public function test_tested_version_leaves_a_prerelease_version_alone() {
 		$this->set_wp_version( '7.2.3' );
 
-		$this->assertSame( '7.2.3', $this->call( 'get_tested_version', array( (object) array( 'tested' => '7.2-beta1' ) ) ) );
+		$this->assertSame( '7.2-beta1', $this->call( 'get_tested_version', array( (object) array( 'tested' => '7.2-beta1' ) ) ) );
 	}
 
 	/**
