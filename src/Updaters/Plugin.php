@@ -374,18 +374,16 @@ class Plugin extends Updater {
 		$current_version_parts = explode( '.', $current_wp_version );
 		$tested_parts          = explode( '.', $tested_version );
 
-		// Different major version.
-		if ( $current_version_parts[0] !== $tested_parts[0] ) {
+		// Only a plain x.y version that matches the current major and minor release is expanded.
+		if ( ! isset( $tested_parts[1] ) || ! isset( $current_version_parts[1] ) ) {
 			return $version_info->tested;
 		}
 
-		// Different minor version.
-		if ( isset( $tested_parts[1], $current_version_parts[1] ) && $current_version_parts[1] !== $tested_parts[1] ) {
+		if ( isset( $tested_parts[2] ) || $version_info->tested !== $tested_version ) {
 			return $version_info->tested;
 		}
 
-		// A version that already names a patch release is not expanded.
-		if ( isset( $tested_parts[2] ) ) {
+		if ( $current_version_parts[0] !== $tested_parts[0] || $current_version_parts[1] !== $tested_parts[1] ) {
 			return $version_info->tested;
 		}
 
