@@ -338,12 +338,18 @@ class Plugin extends Updater {
 		$current_version_parts = explode( '.', $current_wp_version );
 		$tested_parts          = explode( '.', $version_info->tested );
 
-		// The current WordPress version is x.y.z, so update the tested version to match it.
-		if ( isset( $current_version_parts[2] ) && $current_version_parts[0] === $tested_parts[0] && $current_version_parts[1] === $tested_parts[1] ) {
-			$tested_parts[2] = $current_version_parts[2];
+		// Different major version.
+		if ( $current_version_parts[0] !== $tested_parts[0] ) {
+			return $version_info->tested;
 		}
 
-		return implode( '.', $tested_parts );
+		// Different minor version.
+		if ( isset( $tested_parts[1], $current_version_parts[1] ) && $current_version_parts[1] !== $tested_parts[1] ) {
+			return $version_info->tested;
+		}
+
+		// Same release, so expand to the current patch release.
+		return $current_wp_version;
 	}
 
 	/**
