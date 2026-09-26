@@ -345,20 +345,21 @@ class Plugin extends Updater {
 	 */
 	private function get_tested_version( $version_info ) {
 
-		// There is no tested version.
-		if ( empty( $version_info->tested ) ) {
+		// There is no tested version, or it is not a version string.
+		if ( empty( $version_info->tested ) || ! is_string( $version_info->tested ) ) {
 			return null;
 		}
 
 		// Strip off extra version data so the result is x.y or x.y.z.
 		list( $current_wp_version ) = explode( '-', get_bloginfo( 'version' ) );
+		list( $tested_version )     = explode( '-', $version_info->tested );
 
 		// The tested version is greater than or equal to the current WP version, no need to do anything.
-		if ( version_compare( $version_info->tested, $current_wp_version, '>=' ) ) {
+		if ( version_compare( $tested_version, $current_wp_version, '>=' ) ) {
 			return $version_info->tested;
 		}
 		$current_version_parts = explode( '.', $current_wp_version );
-		$tested_parts          = explode( '.', $version_info->tested );
+		$tested_parts          = explode( '.', $tested_version );
 
 		// Different major version.
 		if ( $current_version_parts[0] !== $tested_parts[0] ) {
