@@ -111,6 +111,15 @@ class PluginTest extends TestCase {
 		$this->assertNull( $this->call( 'get_tested_version', array( (object) array( 'tested' => '' ) ) ) );
 	}
 
+	/**
+	 * A response without a tested version still reports the property.
+	 */
+	public function test_tested_version_is_null_when_the_property_is_absent() {
+		$response = $this->call( 'expand_tested_version', array( (object) array( 'new_version' => '1.0.1' ) ) );
+
+		$this->assertNull( $response->tested );
+	}
+
 
 	/**
 	 * A version with only a major part is left alone instead of reading an undefined array key.
