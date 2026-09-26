@@ -83,7 +83,7 @@ class Plugin extends Updater {
 			$this->set_version_info_cache( $api_response );
 
 			if ( false !== $api_response ) {
-				$_data = $api_response;
+				$_data = $this->expand_tested_version( $api_response );
 			}
 		} else {
 			$_data = $edd_api_request_transient;
@@ -250,11 +250,6 @@ class Plugin extends Updater {
 			}
 		}
 
-		// Expand a partial tested version.
-		if ( isset( $request->tested ) ) {
-			$request->tested = $this->get_tested_version( $request );
-		}
-
 		return $request;
 	}
 
@@ -268,7 +263,26 @@ class Plugin extends Updater {
 
 		$version_info = parent::get_cached_version_info();
 
-		if ( false !== $version_info && isset( $version_info->tested ) ) {
+		if ( false !== $version_info ) {
+			$version_info = $this->expand_tested_version( $version_info );
+		}
+
+		return $version_info;
+	}
+
+	/**
+	 * Expand a partial tested version on a version info object.
+	 *
+	 * The cached version info is kept as the store sent it, so the value is expanded when it is
+	 * handed to WordPress rather than when it is stored.
+	 *
+	 * @since 1.0.0
+	 * @param object $version_info Version info.
+	 * @return object
+	 */
+	private function expand_tested_version( $version_info ) {
+
+		if ( isset( $version_info->tested ) ) {
 			$version_info->tested = $this->get_tested_version( $version_info );
 		}
 
@@ -323,7 +337,6 @@ class Plugin extends Updater {
 		// This is required for your plugin to support auto-updates in WordPress 5.5.
 		$version_info->plugin = $this->get_name();
 		$version_info->id     = $this->get_name();
-		$version_info->tested = $this->get_tested_version( $version_info );
 		if ( ! isset( $version_info->requires ) ) {
 			$version_info->requires = '';
 		}
@@ -333,7 +346,7 @@ class Plugin extends Updater {
 
 		$this->set_version_info_cache( $version_info );
 
-		return $version_info;
+		return $this->expand_tested_version( $version_info );
 	}
 
 	/**
