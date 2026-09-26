@@ -371,6 +371,11 @@ class Plugin extends Updater {
 			return $version_info->tested;
 		}
 
+		// A version that already names a patch release is not expanded.
+		if ( isset( $tested_parts[2] ) ) {
+			return $version_info->tested;
+		}
+
 		// Same release, so expand to the current patch release.
 		return $current_wp_version;
 	}
