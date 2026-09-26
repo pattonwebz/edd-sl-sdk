@@ -71,7 +71,8 @@ function apply_filters( $hook, $value ) {
 	$args = array_slice( func_get_args(), 1 );
 
 	foreach( edd_sl_sdk_test_hooks( $hook ) as $callback ) {
-		$value = call_user_func_array( $callback[0], array_slice( $args, 0, $callback[1] ) );
+		$args[0] = $value;
+		$value   = call_user_func_array( $callback[0], array_slice( $args, 0, $callback[1] ) );
 	}
 
 	return $value;
@@ -160,7 +161,7 @@ function wp_remote_get( $url, $args = array() ) {
 	return $response;
 }
 function wp_remote_post( $url, $args = array() ) { return wp_remote_get( $url, $args ); }
-function wp_remote_retrieve_response_code( $response ) { return is_array( $response ) ? ( $response['response']['code'] ?? 200 ) : 0; }
+function wp_remote_retrieve_response_code( $response ) { return is_array( $response ) && isset( $response['response']['code'] ) ? $response['response']['code'] : ''; }
 function wp_remote_retrieve_body( $response ) { return is_array( $response ) ? ( $response['body'] ?? '' ) : ''; }
 function wp_remote_retrieve_response_message( $response ) { return is_array( $response ) ? ( $response['response']['message'] ?? '' ) : ''; }
 
@@ -205,6 +206,30 @@ function esc_attr( $value ) { return $value; }
 function esc_url( $value ) { return $value; }
 function wp_kses_post( $value ) { return $value; }
 function self_admin_url( $path = '' ) { return home_url( '/wp-admin/' . $path ); }
-function add_query_arg( $args, $url = null ) { return $url . '?' . http_build_query( (array) $args ); }
+function add_query_arg( $args, $url = '', $value = null ) {
+	if ( is_array( $args ) ) {
+		$query = $args;
+	} else {
+		$query = array( $args => $url );
+		$url   = $value;
+	}
+
+	$url      = (string) $url;
+	$fragment = '';
+
+	if ( false !== strpos( $url, '#' ) ) {
+		list( $url, $fragment ) = explode( '#', $url, 2 );
+		$fragment               = '#' . $fragment;
+	}
+
+	$parts    = explode( '?', $url, 2 );
+	$existing = array();
+
+	if ( isset( $parts[1] ) ) {
+		parse_str( $parts[1], $existing );
+	}
+
+	return $parts[0] . '?' . http_build_query( array_merge( $existing, $query ) ) . $fragment;
+}
 function __( $text, $domain = null ) { return $text; }
 function _x( $text, $context = null, $domain = null ) { return $text; }
