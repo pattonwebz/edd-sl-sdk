@@ -1,0 +1,142 @@
+<?php
+/**
+ * Minimal WordPress stubs so the SDK can be tested without WordPress.
+ *
+ * @package EasyDigitalDownloads\Updater
+ */
+
+if ( ! defined( 'WP_CONTENT_DIR' ) ) {
+	define( 'WP_CONTENT_DIR', ABSPATH . 'wp-content' );
+}
+if ( ! defined( 'HOUR_IN_SECONDS' ) ) {
+	define( 'HOUR_IN_SECONDS', 3600 );
+}
+if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {
+	define( 'MINUTE_IN_SECONDS', 60 );
+}
+
+$GLOBALS['edd_sl_sdk_test_state'] = array();
+
+function edd_sl_sdk_test_reset() {
+	$GLOBALS['edd_sl_sdk_test_state'] = array(
+		'options'     => array(),
+		'transients'  => array(),
+		'actions'     => array(),
+		'http'        => null,
+		'http_calls'  => 0,
+		'wp_version'  => '6.6.2',
+		'php_version' => '7.4',
+	);
+}
+
+edd_sl_sdk_test_reset();
+
+if ( ! class_exists( 'WP_Error' ) ) {
+	class WP_Error {
+		public $code;
+		public $message;
+		public function __construct( $code = '', $message = '' ) {
+			$this->code    = $code;
+			$this->message = $message;
+		}
+		public function get_error_code() { return $this->code; }
+		public function get_error_message() { return $this->message; }
+	}
+}
+
+function edd_sl_sdk_test_state( $key, $value = null ) {
+	if ( null !== $value ) {
+		$GLOBALS['edd_sl_sdk_test_state'][ $key ] = $value;
+	}
+	return $GLOBALS['edd_sl_sdk_test_state'][ $key ] ?? null;
+}
+
+function add_action( $hook, $callback, $priority = 10, $args = 1 ) {
+	edd_sl_sdk_test_state( 'actions', array_merge( (array) edd_sl_sdk_test_state( 'actions' ), array( $hook ) ) );
+	return true;
+}
+function add_filter( $hook, $callback, $priority = 10, $args = 1 ) { return true; }
+function apply_filters( $hook, $value ) { return $value; }
+function do_action() {}
+function is_wp_error( $thing ) { return $thing instanceof WP_Error; }
+
+function get_option( $key, $default = false ) {
+	$options = (array) edd_sl_sdk_test_state( 'options' );
+	return array_key_exists( $key, $options ) ? $options[ $key ] : $default;
+}
+function update_option( $key, $value, $autoload = null ) {
+	$options          = (array) edd_sl_sdk_test_state( 'options' );
+	$options[ $key ]  = $value;
+	edd_sl_sdk_test_state( 'options', $options );
+	return true;
+}
+function delete_option( $key ) {
+	$options = (array) edd_sl_sdk_test_state( 'options' );
+	unset( $options[ $key ] );
+	edd_sl_sdk_test_state( 'options', $options );
+	return true;
+}
+function get_transient( $key ) {
+	$transients = (array) edd_sl_sdk_test_state( 'transients' );
+	return $transients[ $key ] ?? false;
+}
+function set_transient( $key, $value, $expiration = 0 ) {
+	$transients          = (array) edd_sl_sdk_test_state( 'transients' );
+	$transients[ $key ]  = $value;
+	edd_sl_sdk_test_state( 'transients', $transients );
+	return true;
+}
+function get_site_transient( $key ) { return get_transient( $key ); }
+function set_site_transient( $key, $value, $expiration = 0 ) { return set_transient( $key, $value, $expiration ); }
+
+// HTTP. Tests set a canned response, or leave it null to fail every request.
+function wp_remote_get( $url, $args = array() ) {
+	edd_sl_sdk_test_state( 'http_calls', (int) edd_sl_sdk_test_state( 'http_calls' ) + 1 );
+	$response = edd_sl_sdk_test_state( 'http' );
+
+	if ( null === $response ) {
+		return new WP_Error( 'no_reqs_in_unit_tests', 'HTTP requests are disabled in unit tests.' );
+	}
+
+	return $response;
+}
+function wp_remote_post( $url, $args = array() ) { return wp_remote_get( $url, $args ); }
+function wp_remote_retrieve_response_code( $response ) { return is_array( $response ) ? ( $response['response']['code'] ?? 200 ) : 0; }
+function wp_remote_retrieve_body( $response ) { return is_array( $response ) ? ( $response['body'] ?? '' ) : ''; }
+function wp_remote_retrieve_response_message( $response ) { return is_array( $response ) ? ( $response['response']['message'] ?? '' ) : ''; }
+
+function wp_json_encode( $data ) { return json_encode( $data ); }
+function wp_parse_url( $url, $component = -1 ) { return parse_url( $url, $component ); }
+function wp_parse_args( $args, $defaults = array() ) { return array_merge( (array) $defaults, (array) $args ); }
+function maybe_unserialize( $data ) {
+	if ( ! is_string( $data ) ) {
+		return $data;
+	}
+
+	$unserialized = @unserialize( $data );
+
+	return false === $unserialized && 'b:0;' !== $data ? $data : $unserialized;
+}
+function wp_normalize_path( $path ) { return str_replace( '\\', '/', $path ); }
+function trailingslashit( $value ) { return rtrim( $value, '/\\' ) . '/'; }
+function untrailingslashit( $value ) { return rtrim( $value, '/\\' ); }
+function home_url( $path = '' ) { return 'https://example.test' . $path; }
+function content_url( $path = '' ) { return home_url( '/wp-content' . $path ); }
+function plugin_basename( $file ) { return basename( $file ); }
+function plugin_dir_path( $file ) { return trailingslashit( dirname( $file ) ); }
+function get_bloginfo( $show = '' ) { return 'version' === $show ? edd_sl_sdk_test_state( 'wp_version' ) : ''; }
+function is_admin() { return false; }
+function is_multisite() { return false; }
+function current_user_can() { return true; }
+function is_ssl() { return true; }
+function absint( $value ) { return abs( (int) $value ); }
+function sanitize_text_field( $value ) { return $value; }
+function wp_get_environment_type() { return 'production'; }
+function esc_html( $value ) { return $value; }
+function esc_attr( $value ) { return $value; }
+function esc_url( $value ) { return $value; }
+function wp_kses_post( $value ) { return $value; }
+function self_admin_url( $path = '' ) { return home_url( '/wp-admin/' . $path ); }
+function add_query_arg( $args, $url = null ) { return $url . '?' . http_build_query( (array) $args ); }
+function __( $text, $domain = null ) { return $text; }
+function _x( $text, $context = null, $domain = null ) { return $text; }
