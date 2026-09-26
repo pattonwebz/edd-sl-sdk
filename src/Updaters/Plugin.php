@@ -250,6 +250,11 @@ class Plugin extends Updater {
 			}
 		}
 
+		// Expand a partial tested version.
+		if ( isset( $request->tested ) ) {
+			$request->tested = $this->get_tested_version( $request );
+		}
+
 		return $request;
 	}
 
