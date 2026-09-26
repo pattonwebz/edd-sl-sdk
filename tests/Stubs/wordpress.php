@@ -5,13 +5,9 @@
  * @package EasyDigitalDownloads\Updater
  */
 
-// The stubs below are plain declarations, so this file must not be loaded in a process where
-// WordPress is already present. Bail out loudly rather than dying on a redeclare error.
-// Note: function_exists() cannot be used here — PHP compiles this file's own declarations
-// before running any statement, so it would always see get_bloginfo().
-if ( class_exists( 'WP' ) || defined( 'WPINC' ) ) {
-	throw new RuntimeException( 'The SDK test stubs must not be loaded with WordPress present.' );
-}
+// The declarations below are unconditional, so this file can only be loaded when WordPress is
+// absent. tests/Bootstrap.php checks for that: a guard here could not work, because PHP compiles
+// this file's declarations before running any statement in it.
 
 if ( ! defined( 'WP_CONTENT_DIR' ) ) {
 	define( 'WP_CONTENT_DIR', ABSPATH . 'wp-content' );
@@ -32,7 +28,7 @@ function edd_sl_sdk_test_reset() {
 	$GLOBALS['edd_sl_sdk_test_state'] = array(
 		'options'     => array(),
 		'transients'  => array(),
-		'actions'     => array(),
+		'hooks'       => array(),
 		'http'        => null,
 		'http_calls'  => 0,
 		'wp_version'  => '6.6.2',
@@ -63,12 +59,49 @@ function edd_sl_sdk_test_state( $key, $value = null ) {
 }
 
 function add_action( $hook, $callback, $priority = 10, $args = 1 ) {
-	edd_sl_sdk_test_state( 'actions', array_merge( (array) edd_sl_sdk_test_state( 'actions' ), array( $hook ) ) );
+	$hooks                         = (array) edd_sl_sdk_test_state( 'hooks' );
+	$hooks[ $hook ][ $priority ][] = array( $callback, $args );
+	edd_sl_sdk_test_state( 'hooks', $hooks );
 	return true;
 }
-function add_filter( $hook, $callback, $priority = 10, $args = 1 ) { return true; }
-function apply_filters( $hook, $value ) { return $value; }
-function do_action() {}
+function add_filter( $hook, $callback, $priority = 10, $args = 1 ) {
+	return add_action( $hook, $callback, $priority, $args );
+}
+function apply_filters( $hook, $value ) {
+	$args = array_slice( func_get_args(), 1 );
+
+	foreach( edd_sl_sdk_test_hooks( $hook ) as $callback ) {
+		$value = call_user_func_array( $callback[0], array_slice( $args, 0, $callback[1] ) );
+	}
+
+	return $value;
+}
+function do_action( $hook ) {
+	$args = array_slice( func_get_args(), 1 );
+
+	foreach( edd_sl_sdk_test_hooks( $hook ) as $callback ) {
+		call_user_func_array( $callback[0], array_slice( $args, 0, $callback[1] ) );
+	}
+}
+function edd_sl_sdk_test_hooks( $hook ) {
+	$hooks = (array) edd_sl_sdk_test_state( 'hooks' );
+
+	if ( empty( $hooks[ $hook ] ) ) {
+		return array();
+	}
+
+	ksort( $hooks[ $hook ] );
+
+	$callbacks = array();
+
+	foreach ( $hooks[ $hook ] as $priority_callbacks ) {
+		foreach ( $priority_callbacks as $callback ) {
+			$callbacks[] = $callback;
+		}
+	}
+
+	return $callbacks;
+}
 function is_wp_error( $thing ) { return $thing instanceof WP_Error; }
 
 function get_option( $key, $default = false ) {
