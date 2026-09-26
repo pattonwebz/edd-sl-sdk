@@ -5,6 +5,14 @@
  * @package EasyDigitalDownloads\Updater
  */
 
+// The stubs below are plain declarations, so this file must not be loaded in a process where
+// WordPress is already present. Bail out loudly rather than dying on a redeclare error.
+// Note: function_exists() cannot be used here — PHP compiles this file's own declarations
+// before running any statement, so it would always see get_bloginfo().
+if ( class_exists( 'WP' ) || defined( 'WPINC' ) ) {
+	throw new RuntimeException( 'The SDK test stubs must not be loaded with WordPress present.' );
+}
+
 if ( ! defined( 'WP_CONTENT_DIR' ) ) {
 	define( 'WP_CONTENT_DIR', ABSPATH . 'wp-content' );
 }
@@ -81,11 +89,26 @@ function delete_option( $key ) {
 }
 function get_transient( $key ) {
 	$transients = (array) edd_sl_sdk_test_state( 'transients' );
-	return $transients[ $key ] ?? false;
+
+	if ( ! isset( $transients[ $key ] ) ) {
+		return false;
+	}
+
+	$transient = $transients[ $key ];
+
+	if ( 0 !== $transient['expires'] && time() > $transient['expires'] ) {
+		return false;
+	}
+
+	return $transient['value'];
 }
 function set_transient( $key, $value, $expiration = 0 ) {
-	$transients          = (array) edd_sl_sdk_test_state( 'transients' );
-	$transients[ $key ]  = $value;
+	$transients         = (array) edd_sl_sdk_test_state( 'transients' );
+	$transients[ $key ] = array(
+		'value'   => $value,
+		'expires' => $expiration ? time() + $expiration : 0,
+	);
+
 	edd_sl_sdk_test_state( 'transients', $transients );
 	return true;
 }
