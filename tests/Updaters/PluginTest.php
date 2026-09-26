@@ -101,7 +101,7 @@ class PluginTest extends TestCase {
 	public function test_tested_version_leaves_a_newer_version_alone() {
 		$this->set_wp_version( '7.1.2' );
 
-		$this->assertSame( '7.2', $this->call( 'get_tested_version', array( (object) array( 'tested' => '7.2' ) ) ) );
+		$this->assertSame( '7.2.0', $this->call( 'get_tested_version', array( (object) array( 'tested' => '7.2.0' ) ) ) );
 	}
 
 	/**
