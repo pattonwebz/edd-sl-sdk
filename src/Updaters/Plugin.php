@@ -282,9 +282,7 @@ class Plugin extends Updater {
 	 */
 	private function expand_tested_version( $version_info ) {
 
-		if ( isset( $version_info->tested ) ) {
-			$version_info->tested = $this->get_tested_version( $version_info );
-		}
+		$version_info->tested = $this->get_tested_version( $version_info );
 
 		return $version_info;
 	}
@@ -358,14 +356,14 @@ class Plugin extends Updater {
 	 */
 	private function get_tested_version( $version_info ) {
 
-		// There is no tested version, or it is not a version string.
-		if ( empty( $version_info->tested ) || ! is_string( $version_info->tested ) ) {
+		// There is no usable tested version.
+		if ( empty( $version_info->tested ) || ! is_scalar( $version_info->tested ) ) {
 			return null;
 		}
 
 		// Strip off extra version data so the result is x.y or x.y.z.
 		list( $current_wp_version ) = explode( '-', get_bloginfo( 'version' ) );
-		list( $tested_version )     = explode( '-', $version_info->tested );
+		list( $tested_version )     = explode( '-', (string) $version_info->tested );
 
 		// The tested version is greater than or equal to the current WP version, no need to do anything.
 		if ( version_compare( $tested_version, $current_wp_version, '>=' ) ) {
