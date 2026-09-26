@@ -1,6 +1,4 @@
 /tests export-ignore
-/.buildkite/ export-ignore
-docker-compose-phpunit.yml export-ignore
 package.json export-ignore
 package-lock.json export-ignore
 readme.md export-ignore
