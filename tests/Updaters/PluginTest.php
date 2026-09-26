@@ -205,4 +205,29 @@ class PluginTest extends TestCase {
 			'icons'       => array(),
 		);
 	}
+
+	/**
+	 * A version that already names a patch release is left alone.
+	 */
+	public function test_tested_version_leaves_a_pinned_version_alone() {
+		$this->set_wp_version( '7.1.9' );
+
+		$this->assertSame( '7.1.3', $this->call( 'get_tested_version', array( (object) array( 'tested' => '7.1.3' ) ) ) );
+	}
+
+	/**
+	 * Extra version data on the tested version is stripped before comparing.
+	 */
+	public function test_tested_version_ignores_extra_version_data() {
+		$this->set_wp_version( '7.2.3' );
+
+		$this->assertSame( '7.2.3', $this->call( 'get_tested_version', array( (object) array( 'tested' => '7.2-beta1' ) ) ) );
+	}
+
+	/**
+	 * A tested version that is not a string returns null.
+	 */
+	public function test_tested_version_is_null_for_a_non_string() {
+		$this->assertNull( $this->call( 'get_tested_version', array( (object) array( 'tested' => array( '7', '1' ) ) ) ) );
+	}
 }
