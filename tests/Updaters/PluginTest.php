@@ -182,6 +182,11 @@ class PluginTest extends TestCase {
 
 		$this->assertSame( '7.1.2', $response->tested );
 		$this->assertSame( '7.1.2', $this->call( 'get_cached_version_info' )->tested );
+
+		// Read the stored value directly: the read path expands too, so only the raw
+		// cache proves the response was expanded before it was written.
+		$stored = get_option( $this->call( 'get_cache_key' ) );
+		$this->assertSame( '7.1.2', json_decode( $stored['value'] )->tested );
 	}
 
 	/**
