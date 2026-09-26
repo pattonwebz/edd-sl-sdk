@@ -259,6 +259,23 @@ class Plugin extends Updater {
 	}
 
 	/**
+	 * Get the version info from the cache, if it exists.
+	 *
+	 * @since 1.0.0
+	 * @return object|false
+	 */
+	protected function get_cached_version_info() {
+
+		$version_info = parent::get_cached_version_info();
+
+		if ( false !== $version_info && isset( $version_info->tested ) ) {
+			$version_info->tested = $this->get_tested_version( $version_info );
+		}
+
+		return $version_info;
+	}
+
+	/**
 	 * Gets a limited set of data from the API response.
 	 * This is used for the update_plugins transient.
 	 *
